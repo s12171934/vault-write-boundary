@@ -1,20 +1,13 @@
 ---
 name: vault-write-boundary
 description: >-
-  Write-permission boundary for any agent session running inside the user's Obsidian vault.
-  Load it at session start in the vault and BEFORE every write — Write/Edit, file creation,
-  deletion, move, or any state-changing call to an external system (git remote, Jira, Notion,
-  Confluence, GitHub, filesystem outside the vault). The session may modify vault-internal
-  documents only; writes outside the vault are closed by default (read-only). Exceptions: the
-  standing approvals the vault's own rules name (e.g. re-linking tool skill paths when a skill
-  submodule is added or removed), standing instructions the user has given for a named target,
-  and a command in which the user directly and explicitly names some other external
-  modification — and even then the target, scope, and content must be confirmed with the user
-  before executing. Inside/outside is judged on the symlink-resolved real path (realpath), not
-  the path string: a tool skill path that links into the vault is an internal write, while a
-  vault path that links out is external. Triggers: working in the vault, "볼트 세션",
-  "외부 수정", editing Jira/Notion/repo files from a vault session, or any doubt about whether
-  a write target is inside the vault.
+  Write-permission boundary for agent sessions running inside the user's Obsidian vault: only
+  vault-internal documents may be modified; writes outside the vault (other repos, git remotes,
+  Jira, Notion, Confluence, GitHub, home config) are closed by default, with a short list of
+  named exceptions. Inside/outside is judged on the realpath. Load it at session start in the
+  vault and BEFORE every write or state-changing external call. Triggers: working in the vault,
+  "볼트 세션", "외부 수정", editing Jira/Notion/repo files from a vault session, or any doubt
+  about whether a write target is inside the vault.
 ---
 
 # 볼트 쓰기 경계 (vault-write-boundary)
@@ -38,6 +31,7 @@ description: >-
    - realpath 가 볼트 밖 → **외부 쓰기(기본 거부)**. 경로가 볼트 안이어도 무관하다. 볼트 안에 밖을 가리키는 링크를 두어 규칙 1·2 를 우회할 수 없다.
    - **링크 자체를 만들거나 지우는 것은 별개다.** `ln -sfn`·링크 삭제·대상 변경은 볼트 밖 디렉터리 엔트리를 바꾸는 외부 쓰기다. 예외 ② 에 해당할 때만 그 작업의 일부로 바로 한다.
 7. **서브모듈 안은 내부, 그 원격은 외부.** 볼트 안 서브모듈의 파일을 고치는 것은 내부 쓰기이고, 서브모듈 저장소로 push 하는 것은 외부 쓰기다 (예외 ①·③ 이 있어야 한다).
+8. **외부 스킬 사본은 내부지만 손대지 않는다.** `20_Agents/skills/` 에서 git 무시 대상인 폴더(외부 설치 도구의 사본 등 — 내 스킬은 서브모듈이라 git 이 추적한다)는 realpath 가 볼트 안이어도 설치 도구가 관리하는 물건이다. 손으로 고치지 않고, 추가·갱신·제거는 볼트의 `스킬 출처 관리 규칙` 대로 설치 도구로 한다. 고칠 점을 찾으면 보고만 한다.
 
 ## 쓰기 전 체크
 
@@ -58,3 +52,4 @@ description: >-
 - 상시 승인 (예외 ②): 스킬 서브모듈 추가·제거에 따르는 스킬 링크 정리 — 볼트 규칙이 정한 스크립트로 같은 작업 안에서 수행한다.
 - 외부 쓰기 (기본 거부) — 그 밖의 링크 관리: 스킬 변경과 무관하게 링크를 만들거나 지우는 일.
 - 외부 쓰기 (기본 거부) — 볼트 안에서 밖을 가리키는 링크 경유: 볼트 안 경로처럼 보여도 realpath 가 코드 저장소·홈 설정 파일이면 외부 쓰기다. 외부 스킬 설치 도구가 볼트 스킬 목록에 만든 링크(원본 `~/.agents/skills/`)도 여기에 해당한다.
+- 볼트 내부지만 손대지 않음 (규칙 8): 외부 설치 도구가 `20_Agents/skills/` 에 둔 사본 폴더의 파일 편집. 갱신·제거는 설치 도구로, 사용자의 지시가 있을 때 한다.
